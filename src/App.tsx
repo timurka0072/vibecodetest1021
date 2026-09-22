@@ -1,32 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LayoutDashboard, Globe, Shield, FileBarChart, Menu, X, Calendar, AlertTriangle, Server, ChevronRight, Settings, Users } from 'lucide-react';
+import { IPAssignment, DigitalSignature, TabType, NetworkSettings, Employee } from './types';
 import {
-  LayoutDashboard,
-  Globe,
-  Shield,
-  FileBarChart,
-  Menu,
-  X,
-  Calendar,
-  AlertTriangle,
-  Server,
-  ChevronRight,
-  Settings,
-} from 'lucide-react';
-import { IPAssignment, DigitalSignature, TabType, NetworkSettings } from './types';
-import {
-  getIPAssignments,
-  saveIPAssignments,
-  getDigitalSignatures,
-  saveDigitalSignatures,
-  getSignatureStatus,
-  getNetworkSettings,
-  saveNetworkSettings,
-  generateIPPoolFromNetwork,
-  generateId,
+  getIPAssignments, saveIPAssignments,
+  getDigitalSignatures, saveDigitalSignatures, getSignatureStatus,
+  getNetworkSettings, saveNetworkSettings, generateIPPoolFromNetwork,
+  getEmployees, saveEmployees,
 } from './store';
 import Dashboard from './components/Dashboard';
 import IPPool from './components/IPPool';
+import Employees from './components/Employees';
 import Signatures from './components/Signatures';
 import Reports from './components/Reports';
 import SettingsPanel from './components/SettingsPanel';
@@ -36,6 +20,7 @@ function App() {
   const [ipAssignments, setIPAssignments] = useState<IPAssignment[]>([]);
   const [signatures, setSignatures] = useState<DigitalSignature[]>([]);
   const [networks, setNetworks] = useState<NetworkSettings[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -51,12 +36,13 @@ function App() {
 
   useEffect(() => {
     const nets = getNetworkSettings();
-    let ips = getIPAssignments();
-    let sigs = getDigitalSignatures();
-    sigs = sigs.map((s) => ({ ...s, status: getSignatureStatus(s.expiryDate) }));
+    const ips = getIPAssignments();
+    const sigs = getDigitalSignatures().map((s) => ({ ...s, status: getSignatureStatus(s.expiryDate) }));
+    const emps = getEmployees();
     setNetworks(nets);
     setIPAssignments(ips);
     setSignatures(sigs);
+    setEmployees(emps);
   }, []);
 
   const handleUpdateIPs = (updated: IPAssignment[]) => {
@@ -72,118 +58,98 @@ function App() {
   const handleUpdateNetworks = (updated: NetworkSettings[]) => {
     setNetworks(updated);
     saveNetworkSettings(updated);
-    // Regenerate IP pool
     const allIPs: IPAssignment[] = [];
     updated.forEach((network) => {
       allIPs.push(...generateIPPoolFromNetwork(network));
     });
-    // Preserve existing assignments
     const preservedIPs = allIPs.map((newIP) => {
       const existing = ipAssignments.find((ip) => ip.ipAddress === newIP.ipAddress);
-      if (existing) {
-        return existing;
-      }
-      return newIP;
+      return existing || newIP;
     });
     setIPAssignments(preservedIPs);
     saveIPAssignments(preservedIPs);
   };
 
+  const handleUpdateEmployees = (updated: Employee[]) => {
+    setEmployees(updated);
+    saveEmployees(updated);
+  };
+
   const tabs: { key: TabType; label: string; icon: React.ReactNode; description: string }[] = [
-    { key: 'dashboard', label: 'Панель управления', icon: <LayoutDashboard size={20} />, description: 'Обзор системы' },
-    { key: 'ip-pool', label: 'Пул IP-адресов', icon: <Globe size={20} />, description: 'Управление адресами' },
-    { key: 'devices', label: 'ЭЦП', icon: <Shield size={20} />, description: 'Электронные подписи' },
-    { key: 'reports', label: 'Отчёты', icon: <FileBarChart size={20} />, description: 'Аналитика и экспорт' },
-    { key: 'settings', label: 'Настройки', icon: <Settings size={20} />, description: 'Сети и параметры' },
+    { key: 'dashboard', label: 'Панель управления', icon: <LayoutDashboard size={18} />, description: 'Обзор системы' },
+    { key: 'ip-pool', label: 'Пул IP-адресов', icon: <Globe size={18} />, description: 'Управление адресами' },
+    { key: 'employees', label: 'Сотрудники', icon: <Users size={18} />, description: 'Справочник' },
+    { key: 'signatures', label: 'ЭЦП', icon: <Shield size={18} />, description: 'Электронные подписи' },
+    { key: 'reports', label: 'Отчёты', icon: <FileBarChart size={18} />, description: 'Аналитика' },
+    { key: 'settings', label: 'Настройки', icon: <Settings size={18} />, description: 'Сети' },
   ];
 
-  const usedIPs = ipAssignments.filter(
-    (ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0
-  ).length;
+  const usedIPs = ipAssignments.filter((ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0).length;
   const expiringSigs = signatures.filter((s) => s.status === 'expiring').length;
   const expiredSigs = signatures.filter((s) => s.status === 'expired').length;
   const totalIPs = ipAssignments.length;
   const usagePercent = totalIPs > 0 ? (usedIPs / totalIPs) * 100 : 0;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-gray-50">
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
-            initial={{ x: -280, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -280, opacity: 0 }}
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-72 bg-white/80 backdrop-blur-xl border-r border-white/20 flex flex-col shadow-2xl flex-shrink-0 z-30"
+            className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0 z-30"
           >
-            <div className="p-6 border-b border-gray-100/50">
-              <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }}>
-                <div className="relative">
-                  <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                    <Server className="text-white" size={22} />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
+            <div className="p-5 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center">
+                  <Server className="text-white" size={18} />
                 </div>
                 <div>
-                  <h1 className="font-bold text-gray-800 text-lg leading-tight">IP Manager</h1>
-                  <p className="text-xs text-gray-400 font-medium">Система учёта v2.0</p>
+                  <h1 className="font-semibold text-gray-900 text-sm">IP Manager</h1>
+                  <p className="text-xs text-gray-500">Система учёта</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">Навигация</p>
-              {tabs.map((tab, index) => (
+            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+              {tabs.map((tab) => (
                 <motion.button
                   key={tab.key}
                   onClick={() => { setActiveTab(tab.key); if (isMobile) setSidebarOpen(false); }}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200 group relative ${
-                    activeTab === tab.key
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-200/50'
-                      : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-800'
+                  whileHover={{ x: 2 }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    activeTab === tab.key ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  <span className={`flex-shrink-0 ${activeTab === tab.key ? 'text-white' : 'text-gray-400 group-hover:text-indigo-500'} transition-colors`}>
-                    {tab.icon}
-                  </span>
+                  {tab.icon}
                   <div className="flex-1 text-left">
-                    <span className="font-medium block">{tab.label}</span>
-                    <span className={`text-xs ${activeTab === tab.key ? 'text-white/70' : 'text-gray-400'}`}>{tab.description}</span>
+                    <span className="block">{tab.label}</span>
+                    <span className="text-xs text-gray-400">{tab.description}</span>
                   </div>
-                  {tab.key === 'devices' && (expiringSigs + expiredSigs) > 0 && (
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
-                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700'} badge-animate`}>
+                  {tab.key === 'signatures' && (expiringSigs + expiredSigs) > 0 && (
+                    <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">
                       {expiringSigs + expiredSigs}
-                    </motion.span>
-                  )}
-                  {activeTab === tab.key && (
-                    <motion.div layoutId="activeTab" className="absolute right-2">
-                      <ChevronRight size={16} className="text-white/70" />
-                    </motion.div>
+                    </span>
                   )}
                 </motion.button>
               ))}
             </nav>
 
-            <div className="p-4 border-t border-gray-100/50">
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold text-gray-500">Заполненность</span>
-                  <span className="text-sm font-bold gradient-text">{Math.round(usagePercent)}%</span>
+            <div className="p-4 border-t border-gray-200">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-gray-600">Заполненность</span>
+                  <span className="font-semibold text-indigo-600">{Math.round(usagePercent)}%</span>
                 </div>
-                <div className="w-full bg-white/60 rounded-full h-2 overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${usagePercent}%` }} transition={{ duration: 1, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${usagePercent}%` }} transition={{ duration: 1 }}
+                    className="h-full bg-indigo-600 rounded-full" />
                 </div>
-                <div className="flex justify-between mt-2">
-                  <span className="text-xs text-gray-400">{usedIPs} из {totalIPs}</span>
-                  <span className="text-xs text-green-500 font-medium">{totalIPs - usedIPs} свободно</span>
+                <div className="flex justify-between text-xs mt-1.5 text-gray-500">
+                  <span>{usedIPs} из {totalIPs}</span>
+                  <span className="text-green-600">{totalIPs - usedIPs} свободно</span>
                 </div>
               </div>
             </div>
@@ -191,62 +157,50 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20 md:hidden" />
+            onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/20 z-20 md:hidden" />
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="glass border-b border-white/20 px-4 sm:px-6 py-3 flex items-center justify-between flex-shrink-0 shadow-sm">
+        <header className="bg-white border-b border-gray-200 px-5 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
-              {sidebarOpen ? <X className="text-gray-500" size={20} /> : <Menu className="text-gray-500" size={20} />}
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+              {sidebarOpen ? <X className="text-gray-600" size={18} /> : <Menu className="text-gray-600" size={18} />}
             </motion.button>
             <div>
-              <motion.h2 key={activeTab} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="text-lg sm:text-xl font-bold text-gray-800">
-                {tabs.find((t) => t.key === activeTab)?.label}
-              </motion.h2>
-              <p className="text-xs text-gray-400 hidden sm:block">{tabs.find((t) => t.key === activeTab)?.description}</p>
+              <h2 className="text-base font-semibold text-gray-900">{tabs.find((t) => t.key === activeTab)?.label}</h2>
+              <p className="text-xs text-gray-500">{tabs.find((t) => t.key === activeTab)?.description}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             {(expiringSigs > 0 || expiredSigs > 0) && (
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="relative">
-                <div className="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-xs font-semibold flex items-center gap-1.5">
-                  <AlertTriangle size={14} />
-                  <span className="hidden sm:inline">
-                    {expiringSigs > 0 && `${expiringSigs} истекают`}
-                    {expiringSigs > 0 && expiredSigs > 0 && ' · '}
-                    {expiredSigs > 0 && `${expiredSigs} просрочены`}
-                  </span>
-                  <span className="sm:hidden">{expiringSigs + expiredSigs}</span>
-                </div>
-              </motion.div>
+              <div className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium flex items-center gap-1">
+                <AlertTriangle size={12} />
+                <span className="hidden sm:inline">{expiringSigs + expiredSigs} ЭЦП</span>
+              </div>
             )}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl">
-              <Calendar size={14} className="text-gray-400" />
-              <span className="text-xs text-gray-500 font-medium">
-                {new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-lg">
+              <Calendar size={12} className="text-gray-400" />
+              <span className="text-xs text-gray-600">
+                {new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
               </span>
             </div>
           </div>
-        </motion.header>
+        </header>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-5">
           <AnimatePresence mode="wait">
-            <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="page-transition">
-              {activeTab === 'dashboard' && <Dashboard ipAssignments={ipAssignments} signatures={signatures} />}
-              {activeTab === 'ip-pool' && <IPPool ipAssignments={ipAssignments} onUpdate={handleUpdateIPs} />}
-              {activeTab === 'devices' && <Signatures signatures={signatures} onUpdate={handleUpdateSignatures} />}
-              {activeTab === 'reports' && <Reports ipAssignments={ipAssignments} signatures={signatures} onUpdateIP={handleUpdateIPs} />}
+            <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              {activeTab === 'dashboard' && <Dashboard ipAssignments={ipAssignments} signatures={signatures} employees={employees} />}
+              {activeTab === 'ip-pool' && <IPPool ipAssignments={ipAssignments} employees={employees} onUpdate={handleUpdateIPs} />}
+              {activeTab === 'employees' && <Employees employees={employees} onUpdate={handleUpdateEmployees} />}
+              {activeTab === 'signatures' && <Signatures signatures={signatures} onUpdate={handleUpdateSignatures} />}
+              {activeTab === 'reports' && <Reports ipAssignments={ipAssignments} signatures={signatures} employees={employees} onUpdateIP={handleUpdateIPs} />}
               {activeTab === 'settings' && <SettingsPanel networks={networks} onUpdate={handleUpdateNetworks} />}
             </motion.div>
           </AnimatePresence>

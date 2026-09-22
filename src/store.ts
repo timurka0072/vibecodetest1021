@@ -1,8 +1,9 @@
-import { IPAssignment, DigitalSignature, NetworkSettings } from './types';
+import { IPAssignment, DigitalSignature, NetworkSettings, Employee } from './types';
 
 const IP_STORAGE_KEY = 'ip_assignments';
 const SIGNATURES_STORAGE_KEY = 'digital_signatures';
 const NETWORKS_STORAGE_KEY = 'network_settings';
+const EMPLOYEES_STORAGE_KEY = 'employees';
 
 // Generate IP pool from network settings
 export function generateIPPoolFromNetwork(network: NetworkSettings): IPAssignment[] {
@@ -24,7 +25,6 @@ export function generateIPPoolFromNetwork(network: NetworkSettings): IPAssignmen
 export function getNetworkSettings(): NetworkSettings[] {
   const data = localStorage.getItem(NETWORKS_STORAGE_KEY);
   if (!data) {
-    // Default network
     const defaultNetwork: NetworkSettings = {
       id: 'default',
       name: 'Основная сеть',
@@ -57,32 +57,32 @@ export function getIPAssignments(): IPAssignment[] {
   
   const parsed = JSON.parse(data);
   
-  // Всегда гарантируем наличие поля assignments для всех записей
+  // Миграция: гарантируем наличие всех полей
   const migrated = parsed.map((ip: any) => {
-    // Если есть старое поле assignedTo, конвертируем в новый формат
+    // Если есть старое поле assignedTo, конвертируем
     if (ip.assignedTo && !ip.assignments) {
       return {
         ...ip,
         assignments: [{
           id: generateId(),
-          employeeName: ip.assignedTo,
+          employeeId: '',
           assignedDate: ip.assignedDate || new Date().toISOString().split('T')[0],
-          devices: ip.devices || [],
         }],
-        devices: [],
+        devices: ip.devices || [],
       };
     }
-    // Гарантируем наличие assignments даже если оно undefined
     return {
       ...ip,
-      assignments: ip.assignments || [],
+      assignments: (ip.assignments || []).map((a: any) => ({
+        id: a.id || generateId(),
+        employeeId: a.employeeId || '',
+        assignedDate: a.assignedDate || new Date().toISOString().split('T')[0],
+      })),
       devices: ip.devices || [],
     };
   });
   
-  // Сохраняем мигрированные данные обратно
   localStorage.setItem(IP_STORAGE_KEY, JSON.stringify(migrated));
-  
   return migrated;
 }
 
@@ -108,6 +108,16 @@ export function getSignatureStatus(expiryDate: string): 'active' | 'expiring' | 
   if (diffDays < 0) return 'expired';
   if (diffDays <= 30) return 'expiring';
   return 'active';
+}
+
+export function getEmployees(): Employee[] {
+  const data = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
+  if (!data) return [];
+  return JSON.parse(data);
+}
+
+export function saveEmployees(employees: Employee[]): void {
+  localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(employees));
 }
 
 export function generateId(): string {

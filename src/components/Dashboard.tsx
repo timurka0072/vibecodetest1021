@@ -1,345 +1,155 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  Globe,
-  CheckCircle2,
-  Clock,
-  Monitor,
-  TrendingUp,
-  Building2,
-  AlertTriangle,
-  Shield,
-  ArrowUpRight,
-} from 'lucide-react';
-import { IPAssignment, DigitalSignature } from '../types';
+import { Globe, CheckCircle2, Clock, Monitor, Building2, Shield, ArrowUpRight } from 'lucide-react';
+import { IPAssignment, DigitalSignature, Employee } from '../types';
 
 interface Props {
   ipAssignments: IPAssignment[];
   signatures: DigitalSignature[];
+  employees: Employee[];
 }
 
-export default function Dashboard({ ipAssignments, signatures }: Props) {
+export default function Dashboard({ ipAssignments, signatures, employees }: Props) {
   const totalIPs = ipAssignments.length;
   const usedIPs = ipAssignments.filter(
     (ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0
   ).length;
   const freeIPs = totalIPs - usedIPs;
-  const usagePercent = Math.round((usedIPs / totalIPs) * 100);
+  const usagePercent = totalIPs > 0 ? Math.round((usedIPs / totalIPs) * 100) : 0;
   const totalDevices = ipAssignments.reduce(
-    (sum, ip) => sum + (ip.devices?.length || 0) + (ip.assignments?.reduce((s, a) => s + (a.devices?.length || 0), 0) || 0),
+    (sum, ip) => sum + (ip.devices?.length || 0),
     0
   );
   const activeSignatures = signatures.filter((s) => s.status === 'active').length;
-  const expiringSignatures = signatures.filter(
-    (s) => s.status === 'expiring'
-  ).length;
-  const expiredSignatures = signatures.filter(
-    (s) => s.status === 'expired'
-  ).length;
-  const rooms = [
-    ...new Set(ipAssignments.filter((ip) => ip.room).map((ip) => ip.room)),
-  ];
+  const expiringSignatures = signatures.filter((s) => s.status === 'expiring').length;
+  const expiredSignatures = signatures.filter((s) => s.status === 'expired').length;
+  const rooms = [...new Set(ipAssignments.filter((ip) => ip.room).map((ip) => ip.room))];
+
+  const getEmployeeName = (employeeId: string) => {
+    const emp = employees.find(e => e.id === employeeId);
+    return emp ? emp.fullName : 'Неизвестный';
+  };
 
   const stats = [
-    {
-      label: 'Всего IP-адресов',
-      value: totalIPs,
-      icon: <Globe size={24} />,
-      gradient: 'from-blue-500 to-cyan-500',
-      bgGradient: 'from-blue-50 to-cyan-50',
-      shadowColor: 'shadow-blue-200/50',
-    },
-    {
-      label: 'Использовано',
-      value: usedIPs,
-      icon: <CheckCircle2 size={24} />,
-      gradient: 'from-emerald-500 to-green-500',
-      bgGradient: 'from-emerald-50 to-green-50',
-      shadowColor: 'shadow-emerald-200/50',
-    },
-    {
-      label: 'Свободно',
-      value: freeIPs,
-      icon: <Clock size={24} />,
-      gradient: 'from-amber-500 to-orange-500',
-      bgGradient: 'from-amber-50 to-orange-50',
-      shadowColor: 'shadow-amber-200/50',
-    },
-    {
-      label: 'Устройств',
-      value: totalDevices,
-      icon: <Monitor size={24} />,
-      gradient: 'from-purple-500 to-pink-500',
-      bgGradient: 'from-purple-50 to-pink-50',
-      shadowColor: 'shadow-purple-200/50',
-    },
+    { label: 'Всего IP', value: totalIPs, icon: <Globe size={24} />, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Использовано', value: usedIPs, icon: <CheckCircle2 size={24} />, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Свободно', value: freeIPs, icon: <Clock size={24} />, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Устройств', value: totalDevices, icon: <Monitor size={24} />, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
-      {/* Header */}
-      <motion.div variants={itemVariants}>
-        <h2 className="text-3xl font-bold text-gray-800 mb-1">
-          Добро пожаловать! 👋
-        </h2>
-        <p className="text-gray-500">
-          Обзор состояния сети и ресурсов вашей организации
-        </p>
-      </motion.div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 page-enter">
+      <div>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-1">Панель управления</h2>
+        <p className="text-sm text-gray-500">Обзор состояния сети и ресурсов</p>
+      </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.label}
-            variants={itemVariants}
-            whileHover={{ y: -8, scale: 1.02 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-            className={`relative bg-gradient-to-br ${stat.bgGradient} rounded-2xl p-5 border border-white/50 shadow-lg ${stat.shadowColor} overflow-hidden group cursor-default`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white rounded-lg border border-gray-200 p-5 card-hover"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity">
-              <div className={`w-full h-full bg-gradient-to-br ${stat.gradient} rounded-full blur-3xl`} />
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div
-                  className={`w-12 h-12 bg-gradient-to-br ${stat.gradient} rounded-xl flex items-center justify-center text-white shadow-lg`}
-                >
-                  {stat.icon}
-                </div>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                >
-                  <TrendingUp size={16} className="text-gray-400" />
-                </motion.div>
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-10 h-10 ${stat.bg} rounded-lg flex items-center justify-center ${stat.color}`}>
+                {stat.icon}
               </div>
-              <p className="text-sm text-gray-600 font-medium mb-1">
-                {stat.label}
-              </p>
-              <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
             </div>
+            <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
+            <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Usage Progress */}
-      <motion.div
-        variants={itemVariants}
-        className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6 overflow-hidden relative"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 opacity-5">
-          <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-3xl" />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+        className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Заполненность пула</h3>
+            <p className="text-sm text-gray-500">Распределение адресного пространства</p>
+          </div>
+          <p className="text-3xl font-semibold text-indigo-600">{usagePercent}%</p>
         </div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-gray-800">
-                Заполненность пула IP-адресов
-              </h3>
-              <p className="text-sm text-gray-500">
-                Распределение адресного пространства
-              </p>
-            </div>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: 'spring' }}
-              className="text-4xl font-bold gradient-text"
-            >
-              {usagePercent}%
-            </motion.div>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-5 overflow-hidden shadow-inner">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${usagePercent}%` }}
-              transition={{ duration: 1.5, ease: 'easeOut' }}
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse" />
-            </motion.div>
-          </div>
-          <div className="flex justify-between mt-3 text-sm">
-            <span className="text-gray-500">
-              <span className="font-semibold text-green-600">{usedIPs}</span>{' '}
-              использовано
-            </span>
-            <span className="text-gray-500">
-              <span className="font-semibold text-amber-600">{freeIPs}</span>{' '}
-              свободно
-            </span>
-          </div>
+        <div className="w-full bg-gray-100 rounded-full h-2">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${usagePercent}%` }}
+            transition={{ duration: 1 }}
+            className="h-full bg-indigo-600 rounded-full"
+          />
+        </div>
+        <div className="flex justify-between mt-2 text-sm text-gray-500">
+          <span>{usedIPs} использовано</span>
+          <span>{freeIPs} свободно</span>
         </div>
       </motion.div>
 
-      {/* Second Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Signatures Status */}
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ y: -4 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6"
-        >
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200/50">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
               <Shield size={20} />
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-800">
-                Статус ЭЦП
-              </h3>
-              <p className="text-xs text-gray-500">
-                Электронные цифровые подписи
-              </p>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Статус ЭЦП</h3>
           </div>
-          <div className="space-y-3">
-            <motion.div
-              whileHover={{ x: 4 }}
-              className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100"
-            >
-              <span className="flex items-center gap-2 text-gray-700 font-medium">
-                <span className="text-emerald-500"><CheckCircle2 size={16} /></span>
-                Активные
-              </span>
-              <span className="text-lg font-bold text-emerald-600 bg-white px-3 py-1 rounded-lg shadow-sm">
-                {activeSignatures}
-              </span>
-            </motion.div>
-            <motion.div
-              whileHover={{ x: 4 }}
-              className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100"
-            >
-              <span className="flex items-center gap-2 text-gray-700 font-medium">
-                <span className="text-amber-500"><AlertTriangle size={16} /></span>
-                Истекают (30 дней)
-              </span>
-              <span className="text-lg font-bold text-amber-600 bg-white px-3 py-1 rounded-lg shadow-sm">
-                {expiringSignatures}
-              </span>
-            </motion.div>
-            <motion.div
-              whileHover={{ x: 4 }}
-              className="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100"
-            >
-              <span className="flex items-center gap-2 text-gray-700 font-medium">
-                <span className="text-red-500"><Clock size={16} /></span>
-                Просрочены
-              </span>
-              <span className="text-lg font-bold text-red-600 bg-white px-3 py-1 rounded-lg shadow-sm">
-                {expiredSignatures}
-              </span>
-            </motion.div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <span className="text-sm text-gray-700">Активные</span>
+              <span className="font-semibold text-green-600">{activeSignatures}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+              <span className="text-sm text-gray-700">Истекают</span>
+              <span className="font-semibold text-amber-600">{expiringSignatures}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+              <span className="text-sm text-gray-700">Просрочены</span>
+              <span className="font-semibold text-red-600">{expiredSignatures}</span>
+            </div>
           </div>
         </motion.div>
 
-        {/* Rooms */}
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ y: -4 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6"
-        >
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-pink-200/50">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center text-pink-600">
               <Building2 size={20} />
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-800">
-                Занятые кабинеты
-              </h3>
-              <p className="text-xs text-gray-500">
-                Распределение по помещениям
-              </p>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Кабинеты</h3>
           </div>
           {rooms.length > 0 ? (
-            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
-              {rooms.sort().map((room, index) => (
-                <motion.span
-                  key={room}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  className="px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 rounded-xl text-sm font-medium border border-indigo-100 cursor-default shadow-sm"
-                >
+            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+              {rooms.sort().map((room) => (
+                <span key={room} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">
                   Каб. {room}
-                </motion.span>
+                </span>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Building2
-                size={48}
-                className="mx-auto text-gray-200 mb-2"
-              />
-              <p className="text-gray-400 text-sm">Нет данных о кабинетах</p>
-            </div>
+            <p className="text-sm text-gray-400 text-center py-8">Нет данных</p>
           )}
         </motion.div>
       </div>
 
-      {/* Recent Assignments */}
-      <motion.div
-        variants={itemVariants}
-        className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-6"
-      >
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200/50">
-              <ArrowUpRight size={20} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-800">
-                Последние назначения
-              </h3>
-              <p className="text-xs text-gray-500">
-                Недавно выданные IP-адреса
-              </p>
-            </div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+        className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+            <ArrowUpRight size={20} />
           </div>
+          <h3 className="text-lg font-semibold text-gray-900">Последние назначения</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b-2 border-gray-100">
-                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
-                  IP-адрес
-                </th>
-                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
-                  Сотрудники
-                </th>
-                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
-                  Кабинет
-                </th>
-                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
-                  Устройства
-                </th>
-                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
-                  Дата
-                </th>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-600 uppercase">IP</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-600 uppercase">Сотрудники</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-600 uppercase">Кабинет</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-600 uppercase">Устройства</th>
               </tr>
             </thead>
             <tbody>
@@ -351,62 +161,19 @@ export default function Dashboard({ ipAssignments, signatures }: Props) {
                   return new Date(bDate).getTime() - new Date(aDate).getTime();
                 })
                 .slice(0, 5)
-                .map((ip, index) => (
-                  <motion.tr
-                    key={ip.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="border-b border-gray-50 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 transition-all duration-200"
-                  >
-                    <td className="py-4 px-5">
-                      <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-mono text-xs font-semibold border border-indigo-100">
-                        {ip.ipAddress}
-                      </span>
+                .map((ip) => (
+                  <tr key={ip.id} className="border-b border-gray-100">
+                    <td className="py-2 px-3 font-mono text-xs">{ip.ipAddress}</td>
+                    <td className="py-2 px-3 text-sm">
+                      {ip.assignments?.map(a => getEmployeeName(a.employeeId)).join(', ')}
                     </td>
-                    <td className="py-4 px-5">
-                      <div className="flex flex-wrap gap-1">
-                        {ip.assignments?.map((a) => (
-                          <span key={a.id} className="text-sm font-medium text-gray-800">
-                            {a.employeeName}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-4 px-5">
-                      {ip.room ? (
-                        <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium border border-purple-100">
-                          {ip.room}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="py-4 px-5">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
-                        {(ip.devices?.length || 0) + (ip.assignments?.reduce((s, a) => s + (a.devices?.length || 0), 0) || 0)} шт.
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-gray-500 text-xs">
-                      {ip.assignments?.[0]?.assignedDate || '—'}
-                    </td>
-                  </motion.tr>
+                    <td className="py-2 px-3 text-sm">{ip.room || '—'}</td>
+                    <td className="py-2 px-3 text-sm">{ip.devices?.length || 0} шт.</td>
+                  </tr>
                 ))}
               {ipAssignments.filter((ip) => (ip.assignments?.length || 0) > 0).length === 0 && (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="py-12 text-center text-gray-400"
-                  >
-                    <Monitor
-                      size={48}
-                      className="mx-auto text-gray-200 mb-3"
-                    />
-                    <p>Нет назначений</p>
-                    <p className="text-xs mt-1">
-                      Перейдите в раздел «Пул IP-адресов» для начала работы
-                    </p>
-                  </td>
+                  <td colSpan={4} className="py-8 text-center text-gray-400 text-sm">Нет назначений</td>
                 </tr>
               )}
             </tbody>

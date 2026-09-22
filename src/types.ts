@@ -13,16 +13,15 @@ export interface IPAssignment {
   ipAddress: string;
   subnet?: string;
   room?: string;
-  devices: Device[];
-  assignments: EmployeeAssignment[]; // Массив назначений для нескольких сотрудников
+  devices: Device[]; // Устройства на этом IP (общие для кабинета)
+  assignments: EmployeeAssignment[]; // Сотрудники, которым выдан этот IP
   notes?: string;
 }
 
 export interface EmployeeAssignment {
   id: string;
-  employeeName: string;
+  employeeId: string; // Ссылка на справочник сотрудников
   assignedDate: string;
-  devices: Device[]; // Устройства конкретного сотрудника
 }
 
 export interface Employee {
@@ -54,4 +53,4 @@ export interface NetworkSettings {
   endIP: number;
 }
 
-export type TabType = 'dashboard' | 'ip-pool' | 'devices' | 'signatures' | 'reports' | 'settings';
+export type TabType = 'dashboard' | 'ip-pool' | 'employees' | 'signatures' | 'reports' | 'settings';
