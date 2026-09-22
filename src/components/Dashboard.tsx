@@ -21,12 +21,12 @@ interface Props {
 export default function Dashboard({ ipAssignments, signatures }: Props) {
   const totalIPs = ipAssignments.length;
   const usedIPs = ipAssignments.filter(
-    (ip) => ip.assignments.length > 0 || ip.devices.length > 0
+    (ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0
   ).length;
   const freeIPs = totalIPs - usedIPs;
   const usagePercent = Math.round((usedIPs / totalIPs) * 100);
   const totalDevices = ipAssignments.reduce(
-    (sum, ip) => sum + ip.devices.length + ip.assignments.reduce((s, a) => s + a.devices.length, 0),
+    (sum, ip) => sum + (ip.devices?.length || 0) + (ip.assignments?.reduce((s, a) => s + (a.devices?.length || 0), 0) || 0),
     0
   );
   const activeSignatures = signatures.filter((s) => s.status === 'active').length;
@@ -344,10 +344,10 @@ export default function Dashboard({ ipAssignments, signatures }: Props) {
             </thead>
             <tbody>
               {ipAssignments
-                .filter((ip) => ip.assignments.length > 0)
+                .filter((ip) => (ip.assignments?.length || 0) > 0)
                 .sort((a, b) => {
-                  const aDate = a.assignments[0]?.assignedDate || '';
-                  const bDate = b.assignments[0]?.assignedDate || '';
+                  const aDate = a.assignments?.[0]?.assignedDate || '';
+                  const bDate = b.assignments?.[0]?.assignedDate || '';
                   return new Date(bDate).getTime() - new Date(aDate).getTime();
                 })
                 .slice(0, 5)
@@ -366,7 +366,7 @@ export default function Dashboard({ ipAssignments, signatures }: Props) {
                     </td>
                     <td className="py-4 px-5">
                       <div className="flex flex-wrap gap-1">
-                        {ip.assignments.map((a) => (
+                        {ip.assignments?.map((a) => (
                           <span key={a.id} className="text-sm font-medium text-gray-800">
                             {a.employeeName}
                           </span>
@@ -384,15 +384,15 @@ export default function Dashboard({ ipAssignments, signatures }: Props) {
                     </td>
                     <td className="py-4 px-5">
                       <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
-                        {ip.devices.length + ip.assignments.reduce((s, a) => s + a.devices.length, 0)} шт.
+                        {(ip.devices?.length || 0) + (ip.assignments?.reduce((s, a) => s + (a.devices?.length || 0), 0) || 0)} шт.
                       </span>
                     </td>
                     <td className="py-4 px-5 text-gray-500 text-xs">
-                      {ip.assignments[0]?.assignedDate || '—'}
+                      {ip.assignments?.[0]?.assignedDate || '—'}
                     </td>
                   </motion.tr>
                 ))}
-              {ipAssignments.filter((ip) => ip.assignments.length > 0).length === 0 && (
+              {ipAssignments.filter((ip) => (ip.assignments?.length || 0) > 0).length === 0 && (
                 <tr>
                   <td
                     colSpan={5}

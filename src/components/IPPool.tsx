@@ -48,10 +48,10 @@ export default function IPPool({ ipAssignments, onUpdate }: Props) {
   const filteredIPs = ipAssignments.filter((ip) => {
     const matchesSearch =
       ip.ipAddress.includes(search) ||
-      ip.assignments.some(a => a.employeeName.toLowerCase().includes(search.toLowerCase())) ||
+      (ip.assignments?.some(a => a.employeeName.toLowerCase().includes(search.toLowerCase())) || false) ||
       (ip.room && ip.room.includes(search));
 
-    const isUsed = ip.assignments.length > 0 || ip.devices.length > 0;
+    const isUsed = (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0;
     const matchesFilter =
       filterStatus === 'all' ||
       (filterStatus === 'free' && !isUsed) ||
@@ -63,8 +63,8 @@ export default function IPPool({ ipAssignments, onUpdate }: Props) {
   const handleEdit = (ip: IPAssignment) => {
     setEditingIP({ 
       ...ip, 
-      devices: [...ip.devices],
-      assignments: ip.assignments.map(a => ({ ...a, devices: [...a.devices] }))
+      devices: [...(ip.devices || [])],
+      assignments: (ip.assignments || []).map(a => ({ ...a, devices: [...(a.devices || [])] }))
     });
     setShowModal(true);
   };
@@ -205,14 +205,14 @@ export default function IPPool({ ipAssignments, onUpdate }: Props) {
                 key: 'free',
                 label: 'Свободные',
                 count: ipAssignments.filter(
-                  (ip) => ip.assignments.length === 0 && ip.devices.length === 0
+                  (ip) => (ip.assignments?.length || 0) === 0 && (ip.devices?.length || 0) === 0
                 ).length,
               },
               {
                 key: 'used',
                 label: 'Занятые',
                 count: ipAssignments.filter(
-                  (ip) => ip.assignments.length > 0 || ip.devices.length > 0
+                  (ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0
                 ).length,
               },
             ].map((filter) => (
@@ -278,7 +278,7 @@ export default function IPPool({ ipAssignments, onUpdate }: Props) {
             <tbody>
               <AnimatePresence>
                 {filteredIPs.slice(0, 50).map((ip, index) => {
-                  const isUsed = ip.assignments.length > 0 || ip.devices.length > 0;
+                  const isUsed = (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0;
                   return (
                     <motion.tr
                       key={ip.id}
@@ -311,9 +311,9 @@ export default function IPPool({ ipAssignments, onUpdate }: Props) {
                         </motion.span>
                       </td>
                       <td className="py-5 px-6">
-                        {ip.assignments.length > 0 ? (
+                        {(ip.assignments?.length || 0) > 0 ? (
                           <div className="flex flex-wrap gap-1.5">
-                            {ip.assignments.map((a) => (
+                            {ip.assignments?.map((a) => (
                               <span key={a.id} className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
                                 {a.employeeName}
                               </span>
@@ -333,9 +333,9 @@ export default function IPPool({ ipAssignments, onUpdate }: Props) {
                         )}
                       </td>
                       <td className="py-5 px-6">
-                        {ip.devices.length > 0 || ip.assignments.some(a => a.devices.length > 0) ? (
+                        {(ip.devices?.length || 0) > 0 || (ip.assignments?.some(a => (a.devices?.length || 0) > 0) || false) ? (
                           <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-100">
-                            {ip.devices.length + ip.assignments.reduce((s, a) => s + a.devices.length, 0)} шт.
+                            {(ip.devices?.length || 0) + (ip.assignments?.reduce((s, a) => s + (a.devices?.length || 0), 0) || 0)} шт.
                           </span>
                         ) : (
                           <span className="text-gray-400">—</span>

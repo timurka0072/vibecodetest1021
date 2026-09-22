@@ -98,7 +98,7 @@ function App() {
   ];
 
   const usedIPs = ipAssignments.filter(
-    (ip) => ip.assignments.length > 0 || ip.devices.length > 0
+    (ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0
   ).length;
   const expiringSigs = signatures.filter((s) => s.status === 'expiring').length;
   const expiredSigs = signatures.filter((s) => s.status === 'expired').length;

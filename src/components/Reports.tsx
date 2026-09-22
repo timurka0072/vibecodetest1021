@@ -56,12 +56,12 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
   const [showSuccess, setShowSuccess] = useState(false);
 
   const freeIPs = ipAssignments.filter(
-    (ip) => ip.assignments.length === 0 && ip.devices.length === 0
+    (ip) => (ip.assignments?.length || 0) === 0 && (ip.devices?.length || 0) === 0
   );
   const rooms = [
     ...new Set(ipAssignments.filter((ip) => ip.room).map((ip) => ip.room)),
   ].sort();
-  const allEmployees = ipAssignments.flatMap(ip => ip.assignments.map(a => a.employeeName));
+  const allEmployees = ipAssignments.flatMap(ip => (ip.assignments || []).map(a => a.employeeName));
   const employees = [...new Set(allEmployees)].sort();
 
   const handleAssignIP = () => {
@@ -90,7 +90,7 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
         return {
           ...ip,
           room: assignForm.room || ip.room,
-          assignments: [...ip.assignments, newAssignment],
+          assignments: [...(ip.assignments || []), newAssignment],
         };
       }
       return ip;
@@ -136,10 +136,10 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
       : ipAssignments.filter((ip) => ip.room);
     const data = [['IP-адрес', 'Кабинет', 'Сотрудники', 'Устройства']];
     filtered.forEach((ip) => {
-      const employees = ip.assignments.map(a => a.employeeName).join(', ');
+      const employees = (ip.assignments || []).map(a => a.employeeName).join(', ');
       const devices = [
-        ...ip.devices.map((d) => d.name || DEVICE_TYPE_LABELS[d.type]),
-        ...ip.assignments.flatMap(a => a.devices.map(d => d.name || DEVICE_TYPE_LABELS[d.type]))
+        ...(ip.devices || []).map((d) => d.name || DEVICE_TYPE_LABELS[d.type]),
+        ...(ip.assignments || []).flatMap(a => (a.devices || []).map(d => d.name || DEVICE_TYPE_LABELS[d.type]))
       ].join(', ');
       data.push([ip.ipAddress, ip.room || '', employees, devices]);
     });
@@ -151,9 +151,9 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
       ['IP-адрес', 'Сотрудник', 'Кабинет', 'Дата назначения', 'Устройства'],
     ];
     ipAssignments.forEach((ip) => {
-      ip.assignments.forEach(a => {
+      (ip.assignments || []).forEach(a => {
         if (employeeFilter === '' || a.employeeName === employeeFilter) {
-          const devices = a.devices
+          const devices = (a.devices || [])
             .map((d) => d.name || DEVICE_TYPE_LABELS[d.type])
             .join(', ');
           data.push([
@@ -428,20 +428,20 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
                         <td className="py-4 px-6"><span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium border border-purple-100">{ip.room}</span></td>
                         <td className="py-4 px-6">
                           <div className="flex flex-wrap gap-1">
-                            {ip.assignments.map(a => (
+                            {(ip.assignments || []).map(a => (
                               <span key={a.id} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">{a.employeeName}</span>
                             ))}
-                            {ip.assignments.length === 0 && <span className="text-gray-400">—</span>}
+                            {(ip.assignments?.length || 0) === 0 && <span className="text-gray-400">—</span>}
                           </div>
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex gap-1 flex-wrap">
-                            {[...ip.devices, ...ip.assignments.flatMap(a => a.devices)].map((d, i) => (
+                            {[...(ip.devices || []), ...(ip.assignments || []).flatMap(a => a.devices || [])].map((d, i) => (
                               <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-100">
                                 {DEVICE_ICONS[d.type]}{d.name || DEVICE_TYPE_LABELS[d.type]}
                               </span>
                             ))}
-                            {ip.devices.length === 0 && ip.assignments.every(a => a.devices.length === 0) && <span className="text-gray-400">—</span>}
+                            {(ip.devices?.length || 0) === 0 && (ip.assignments?.every(a => (a.devices?.length || 0) === 0) || true) && <span className="text-gray-400">—</span>}
                           </div>
                         </td>
                       </motion.tr>
@@ -489,7 +489,7 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
                   </tr>
                 </thead>
                 <tbody>
-                  {ipAssignments.flatMap(ip => ip.assignments.map(a => ({ ip, assignment: a })))
+                  {ipAssignments.flatMap(ip => (ip.assignments || []).map(a => ({ ip, assignment: a })))
                     .filter(({ assignment }) => employeeFilter === '' || assignment.employeeName === employeeFilter)
                     .sort((a, b) => a.assignment.employeeName.localeCompare(b.assignment.employeeName))
                     .map(({ ip, assignment }, index) => (
@@ -501,12 +501,12 @@ export default function Reports({ ipAssignments, signatures, onUpdateIP }: Props
                         <td className="py-4 px-6 text-gray-500 text-xs">{assignment.assignedDate || '—'}</td>
                         <td className="py-4 px-6">
                           <div className="flex gap-1 flex-wrap">
-                            {assignment.devices.map((d) => (
+                            {(assignment.devices || []).map((d) => (
                               <span key={d.id} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
                                 {DEVICE_ICONS[d.type]}{d.name || DEVICE_TYPE_LABELS[d.type]}
                               </span>
                             ))}
-                            {assignment.devices.length === 0 && <span className="text-gray-400">—</span>}
+                            {(assignment.devices?.length || 0) === 0 && <span className="text-gray-400">—</span>}
                           </div>
                         </td>
                       </motion.tr>

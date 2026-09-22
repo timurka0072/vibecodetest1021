@@ -57,33 +57,33 @@ export function getIPAssignments(): IPAssignment[] {
   
   const parsed = JSON.parse(data);
   
-  // Миграция: если данные в старом формате (без assignments), конвертируем
-  const needsMigration = parsed.some((ip: any) => ip.assignedTo !== undefined && ip.assignments === undefined);
-  
-  if (needsMigration) {
-    const migrated = parsed.map((ip: any) => {
-      if (ip.assignedTo && !ip.assignments) {
-        return {
-          ...ip,
-          assignments: [{
-            id: generateId(),
-            employeeName: ip.assignedTo,
-            assignedDate: ip.assignedDate || new Date().toISOString().split('T')[0],
-            devices: ip.devices || [],
-          }],
-          devices: [],
-        };
-      }
+  // Всегда гарантируем наличие поля assignments для всех записей
+  const migrated = parsed.map((ip: any) => {
+    // Если есть старое поле assignedTo, конвертируем в новый формат
+    if (ip.assignedTo && !ip.assignments) {
       return {
         ...ip,
-        assignments: ip.assignments || [],
+        assignments: [{
+          id: generateId(),
+          employeeName: ip.assignedTo,
+          assignedDate: ip.assignedDate || new Date().toISOString().split('T')[0],
+          devices: ip.devices || [],
+        }],
+        devices: [],
       };
-    });
-    localStorage.setItem(IP_STORAGE_KEY, JSON.stringify(migrated));
-    return migrated;
-  }
+    }
+    // Гарантируем наличие assignments даже если оно undefined
+    return {
+      ...ip,
+      assignments: ip.assignments || [],
+      devices: ip.devices || [],
+    };
+  });
   
-  return parsed;
+  // Сохраняем мигрированные данные обратно
+  localStorage.setItem(IP_STORAGE_KEY, JSON.stringify(migrated));
+  
+  return migrated;
 }
 
 export function saveIPAssignments(assignments: IPAssignment[]): void {
