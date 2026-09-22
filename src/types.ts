@@ -14,9 +14,15 @@ export interface IPAssignment {
   subnet?: string;
   room?: string;
   devices: Device[];
-  assignedTo?: string; // employee name
-  assignedDate?: string;
+  assignments: EmployeeAssignment[]; // Массив назначений для нескольких сотрудников
   notes?: string;
+}
+
+export interface EmployeeAssignment {
+  id: string;
+  employeeName: string;
+  assignedDate: string;
+  devices: Device[]; // Устройства конкретного сотрудника
 }
 
 export interface Employee {
@@ -39,4 +45,13 @@ export interface DigitalSignature {
   status: 'active' | 'expiring' | 'expired';
 }
 
-export type TabType = 'dashboard' | 'ip-pool' | 'devices' | 'signatures' | 'reports';
+export interface NetworkSettings {
+  id: string;
+  name: string;
+  networkAddress: string;
+  subnetMask: string;
+  startIP: number;
+  endIP: number;
+}
+
+export type TabType = 'dashboard' | 'ip-pool' | 'devices' | 'signatures' | 'reports' | 'settings';

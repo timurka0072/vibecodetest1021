@@ -21,12 +21,12 @@ interface Props {
 export default function Dashboard({ ipAssignments, signatures }: Props) {
   const totalIPs = ipAssignments.length;
   const usedIPs = ipAssignments.filter(
-    (ip) => ip.assignedTo || ip.devices.length > 0
+    (ip) => ip.assignments.length > 0 || ip.devices.length > 0
   ).length;
   const freeIPs = totalIPs - usedIPs;
   const usagePercent = Math.round((usedIPs / totalIPs) * 100);
   const totalDevices = ipAssignments.reduce(
-    (sum, ip) => sum + ip.devices.length,
+    (sum, ip) => sum + ip.devices.length + ip.assignments.reduce((s, a) => s + a.devices.length, 0),
     0
   );
   const activeSignatures = signatures.filter((s) => s.status === 'active').length;
@@ -322,34 +322,34 @@ export default function Dashboard({ ipAssignments, signatures }: Props) {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left py-3 px-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+              <tr className="border-b-2 border-gray-100">
+                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
                   IP-адрес
                 </th>
-                <th className="text-left py-3 px-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                  Сотрудник
+                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
+                  Сотрудники
                 </th>
-                <th className="text-left py-3 px-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
                   Кабинет
                 </th>
-                <th className="text-left py-3 px-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
                   Устройства
                 </th>
-                <th className="text-left py-3 px-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                <th className="text-left py-4 px-5 text-gray-600 font-semibold text-xs uppercase tracking-wider">
                   Дата
                 </th>
               </tr>
             </thead>
             <tbody>
               {ipAssignments
-                .filter((ip) => ip.assignedTo)
-                .sort(
-                  (a, b) =>
-                    new Date(b.assignedDate || '').getTime() -
-                    new Date(a.assignedDate || '').getTime()
-                )
+                .filter((ip) => ip.assignments.length > 0)
+                .sort((a, b) => {
+                  const aDate = a.assignments[0]?.assignedDate || '';
+                  const bDate = b.assignments[0]?.assignedDate || '';
+                  return new Date(bDate).getTime() - new Date(aDate).getTime();
+                })
                 .slice(0, 5)
                 .map((ip, index) => (
                   <motion.tr
@@ -357,36 +357,42 @@ export default function Dashboard({ ipAssignments, signatures }: Props) {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="border-b border-gray-50 table-row-hover"
+                    className="border-b border-gray-50 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 transition-all duration-200"
                   >
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-mono text-xs font-semibold">
+                    <td className="py-4 px-5">
+                      <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-mono text-xs font-semibold border border-indigo-100">
                         {ip.ipAddress}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-medium text-gray-800">
-                      {ip.assignedTo}
+                    <td className="py-4 px-5">
+                      <div className="flex flex-wrap gap-1">
+                        {ip.assignments.map((a) => (
+                          <span key={a.id} className="text-sm font-medium text-gray-800">
+                            {a.employeeName}
+                          </span>
+                        ))}
+                      </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">
+                    <td className="py-4 px-5">
                       {ip.room ? (
-                        <span className="px-2 py-1 bg-gray-100 rounded-lg text-xs">
+                        <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium border border-purple-100">
                           {ip.room}
                         </span>
                       ) : (
-                        '—'
+                        <span className="text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium">
-                        {ip.devices.length} шт.
+                    <td className="py-4 px-5">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
+                        {ip.devices.length + ip.assignments.reduce((s, a) => s + a.devices.length, 0)} шт.
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gray-500 text-xs">
-                      {ip.assignedDate || '—'}
+                    <td className="py-4 px-5 text-gray-500 text-xs">
+                      {ip.assignments[0]?.assignedDate || '—'}
                     </td>
                   </motion.tr>
                 ))}
-              {ipAssignments.filter((ip) => ip.assignedTo).length === 0 && (
+              {ipAssignments.filter((ip) => ip.assignments.length > 0).length === 0 && (
                 <tr>
                   <td
                     colSpan={5}
