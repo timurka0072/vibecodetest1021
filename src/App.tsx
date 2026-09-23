@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Globe, Shield, FileBarChart, Menu, X, Calendar, AlertTriangle, Server, Users, Settings } from 'lucide-react';
 import { IPAssignment, DigitalSignature, TabType, NetworkSettings, Employee } from './types';
 import {
+  getIPAssignments as apiGetIPAssignments,
+  getSignatures as apiGetSignatures,
+  getNetworks as apiGetNetworks,
+  getEmployees as apiGetEmployees,
+  updateIPAssignment as apiUpdateIP,
+  updateSignature as apiUpdateSignature,
+  updateNetwork as apiUpdateNetwork,
+  updateEmployee as apiUpdateEmployee,
+  checkHealth,
+} from './api';
+import {
   getIPAssignments, saveIPAssignments,
   getDigitalSignatures, saveDigitalSignatures, getSignatureStatus,
   getNetworkSettings, saveNetworkSettings, generateIPPoolFromNetwork,
@@ -34,29 +45,131 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const nets = getNetworkSettings();
-    const ips = getIPAssignments();
-    const sigs = getDigitalSignatures().map((s) => ({ ...s, status: getSignatureStatus(s.expiryDate) }));
-    const emps = getEmployees();
-    setNetworks(nets);
-    setIPAssignments(ips);
-    setSignatures(sigs);
-    setEmployees(emps);
+    const loadData = async () => {
+      // Пробуем загрузить из API
+      const isApiAvailable = await checkHealth();
+      
+      if (isApiAvailable) {
+        try {
+          const [nets, ips, sigs, emps] = await Promise.all([
+            apiGetNetworks(),
+            apiGetIPAssignments(),
+            apiGetSignatures(),
+            apiGetEmployees(),
+          ]);
+          
+          // Конвертируем данные из API в формат приложения
+          const networks: NetworkSettings[] = nets.map((n: any) => ({
+            id: n.id,
+            name: n.name,
+            networkAddress: n.network_address,
+            subnetMask: n.subnet_mask,
+            startIP: n.start_ip,
+            endIP: n.end_ip,
+          }));
+          
+          const ipAssignments: IPAssignment[] = ips.map((ip: any) => ({
+            id: ip.id,
+            ipAddress: ip.ip_address,
+            subnet: ip.subnet,
+            room: ip.room,
+            notes: ip.notes,
+            assignments: ip.assignments.map((a: any) => ({
+              id: a.id,
+              employeeId: a.employee_id,
+              assignedDate: a.assigned_date,
+            })),
+            devices: ip.devices.map((d: any) => ({
+              id: d.id,
+              type: d.type,
+              name: d.name,
+              inventoryNumber: d.inventory_number,
+              macAddress: d.mac_address,
+            })),
+          }));
+          
+          const signatures: DigitalSignature[] = sigs.map((s: any) => ({
+            id: s.id,
+            employeeId: s.employee_id,
+            employeeName: s.employee_name,
+            issuer: s.issuer,
+            serialNumber: s.serial_number,
+            issueDate: s.issue_date,
+            expiryDate: s.expiry_date,
+            status: s.status,
+          }));
+          
+          const employees: Employee[] = emps.map((e: any) => ({
+            id: e.id,
+            fullName: e.full_name,
+            position: e.position,
+            department: e.department,
+            email: e.email,
+            phone: e.phone,
+          }));
+          
+          setNetworks(networks);
+          setIPAssignments(ipAssignments);
+          setSignatures(signatures);
+          setEmployees(employees);
+          return;
+        } catch (error) {
+          console.error('Ошибка загрузки из API:', error);
+        }
+      }
+      
+      // Fallback на localStorage
+      const nets = getNetworkSettings();
+      const ips = getIPAssignments();
+      const sigs = getDigitalSignatures().map((s) => ({ ...s, status: getSignatureStatus(s.expiryDate) }));
+      const emps = getEmployees();
+      setNetworks(nets);
+      setIPAssignments(ips);
+      setSignatures(sigs);
+      setEmployees(emps);
+    };
+    
+    loadData();
   }, []);
 
-  const handleUpdateIPs = (updated: IPAssignment[]) => {
+  const handleUpdateIPs = async (updated: IPAssignment[]) => {
     setIPAssignments(updated);
-    saveIPAssignments(updated);
+    saveIPAssignments(updated); // Сохраняем локально как backup
+    
+    // Синхронизируем с API
+    const isApiAvailable = await checkHealth();
+    if (isApiAvailable) {
+      try {
+        for (const ip of updated) {
+          await apiUpdateIP(ip.id, ip);
+        }
+      } catch (error) {
+        console.error('Ошибка синхронизации IP:', error);
+      }
+    }
   };
 
-  const handleUpdateSignatures = (updated: DigitalSignature[]) => {
+  const handleUpdateSignatures = async (updated: DigitalSignature[]) => {
     setSignatures(updated);
-    saveDigitalSignatures(updated);
+    saveDigitalSignatures(updated); // Сохраняем локально как backup
+    
+    // Синхронизируем с API
+    const isApiAvailable = await checkHealth();
+    if (isApiAvailable) {
+      try {
+        for (const sig of updated) {
+          await apiUpdateSignature(sig.id, sig);
+        }
+      } catch (error) {
+        console.error('Ошибка синхронизации подписей:', error);
+      }
+    }
   };
 
-  const handleUpdateNetworks = (updated: NetworkSettings[]) => {
+  const handleUpdateNetworks = async (updated: NetworkSettings[]) => {
     setNetworks(updated);
     saveNetworkSettings(updated);
+    
     const allIPs: IPAssignment[] = [];
     updated.forEach((network) => {
       allIPs.push(...generateIPPoolFromNetwork(network));
@@ -67,11 +180,35 @@ function App() {
     });
     setIPAssignments(preservedIPs);
     saveIPAssignments(preservedIPs);
+    
+    // Синхронизируем с API
+    const isApiAvailable = await checkHealth();
+    if (isApiAvailable) {
+      try {
+        for (const network of updated) {
+          await apiUpdateNetwork(network.id, network);
+        }
+      } catch (error) {
+        console.error('Ошибка синхронизации сетей:', error);
+      }
+    }
   };
 
-  const handleUpdateEmployees = (updated: Employee[]) => {
+  const handleUpdateEmployees = async (updated: Employee[]) => {
     setEmployees(updated);
-    saveEmployees(updated);
+    saveEmployees(updated); // Сохраняем локально как backup
+    
+    // Синхронизируем с API
+    const isApiAvailable = await checkHealth();
+    if (isApiAvailable) {
+      try {
+        for (const emp of updated) {
+          await apiUpdateEmployee(emp.id, emp);
+        }
+      } catch (error) {
+        console.error('Ошибка синхронизации сотрудников:', error);
+      }
+    }
   };
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode; description: string }[] = [
