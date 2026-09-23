@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Globe, CheckCircle2, Clock, Monitor, Building2, Shield, ArrowUpRight } from 'lucide-react';
 import { IPAssignment, DigitalSignature, Employee } from '../types';
 
@@ -38,21 +37,15 @@ export default function Dashboard({ ipAssignments, signatures, employees }: Prop
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 page-enter">
+    <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-1">Панель управления</h2>
         <p className="text-sm text-gray-500">Обзор состояния сети и ресурсов</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-lg border border-gray-200 p-5 card-hover"
-          >
+        {stats.map((stat) => (
+          <div key={stat.label} className="bg-white rounded-lg border border-gray-200 p-5 card-hover">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-10 h-10 ${stat.bg} rounded-lg flex items-center justify-center ${stat.color}`}>
                 {stat.icon}
@@ -60,12 +53,11 @@ export default function Dashboard({ ipAssignments, signatures, employees }: Prop
             </div>
             <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
             <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Заполненность пула</h3>
@@ -74,22 +66,16 @@ export default function Dashboard({ ipAssignments, signatures, employees }: Prop
           <p className="text-3xl font-semibold text-indigo-600">{usagePercent}%</p>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${usagePercent}%` }}
-            transition={{ duration: 1 }}
-            className="h-full bg-indigo-600 rounded-full"
-          />
+          <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${usagePercent}%` }} />
         </div>
         <div className="flex justify-between mt-2 text-sm text-gray-500">
           <span>{usedIPs} использовано</span>
           <span>{freeIPs} свободно</span>
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
               <Shield size={20} />
@@ -110,10 +96,9 @@ export default function Dashboard({ ipAssignments, signatures, employees }: Prop
               <span className="font-semibold text-red-600">{expiredSignatures}</span>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-          className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center text-pink-600">
               <Building2 size={20} />
@@ -131,11 +116,10 @@ export default function Dashboard({ ipAssignments, signatures, employees }: Prop
           ) : (
             <p className="text-sm text-gray-400 text-center py-8">Нет данных</p>
           )}
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-        className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
             <ArrowUpRight size={20} />
@@ -179,7 +163,7 @@ export default function Dashboard({ ipAssignments, signatures, employees }: Prop
             </tbody>
           </table>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

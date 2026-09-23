@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Globe, Shield, FileBarChart, Menu, X, Calendar, AlertTriangle, Server, ChevronRight, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, Globe, Shield, FileBarChart, Menu, X, Calendar, AlertTriangle, Server, Users, Settings } from 'lucide-react';
 import { IPAssignment, DigitalSignature, TabType, NetworkSettings, Employee } from './types';
 import {
   getIPAssignments, saveIPAssignments,
@@ -10,7 +9,7 @@ import {
 } from './store';
 import Dashboard from './components/Dashboard';
 import IPPool from './components/IPPool';
-import Employees from './components/Employees';
+import EmployeesComponent from './components/Employees';
 import Signatures from './components/Signatures';
 import Reports from './components/Reports';
 import SettingsPanel from './components/SettingsPanel';
@@ -92,85 +91,71 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0 z-30"
-          >
-            <div className="p-5 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center">
-                  <Server className="text-white" size={18} />
-                </div>
-                <div>
-                  <h1 className="font-semibold text-gray-900 text-sm">IP Manager</h1>
-                  <p className="text-xs text-gray-500">Система учёта</p>
-                </div>
+      {sidebarOpen && (
+        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0 z-30">
+          <div className="p-5 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <Server className="text-white" size={18} />
+              </div>
+              <div>
+                <h1 className="font-semibold text-gray-900 text-sm">IP Manager</h1>
+                <p className="text-xs text-gray-500">Система учёта</p>
               </div>
             </div>
+          </div>
 
-            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-              {tabs.map((tab) => (
-                <motion.button
-                  key={tab.key}
-                  onClick={() => { setActiveTab(tab.key); if (isMobile) setSidebarOpen(false); }}
-                  whileHover={{ x: 2 }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === tab.key ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {tab.icon}
-                  <div className="flex-1 text-left">
-                    <span className="block">{tab.label}</span>
-                    <span className="text-xs text-gray-400">{tab.description}</span>
-                  </div>
-                  {tab.key === 'signatures' && (expiringSigs + expiredSigs) > 0 && (
-                    <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">
-                      {expiringSigs + expiredSigs}
-                    </span>
-                  )}
-                </motion.button>
-              ))}
-            </nav>
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key); if (isMobile) setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  activeTab === tab.key ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {tab.icon}
+                <div className="flex-1 text-left">
+                  <span className="block">{tab.label}</span>
+                  <span className="text-xs text-gray-400">{tab.description}</span>
+                </div>
+                {tab.key === 'signatures' && (expiringSigs + expiredSigs) > 0 && (
+                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">
+                    {expiringSigs + expiredSigs}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
 
-            <div className="p-4 border-t border-gray-200">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-gray-600">Заполненность</span>
-                  <span className="font-semibold text-indigo-600">{Math.round(usagePercent)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${usagePercent}%` }} transition={{ duration: 1 }}
-                    className="h-full bg-indigo-600 rounded-full" />
-                </div>
-                <div className="flex justify-between text-xs mt-1.5 text-gray-500">
-                  <span>{usedIPs} из {totalIPs}</span>
-                  <span className="text-green-600">{totalIPs - usedIPs} свободно</span>
-                </div>
+          <div className="p-4 border-t border-gray-200">
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-gray-600">Заполненность</span>
+                <span className="font-semibold text-indigo-600">{Math.round(usagePercent)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${usagePercent}%` }} />
+              </div>
+              <div className="flex justify-between text-xs mt-1.5 text-gray-500">
+                <span>{usedIPs} из {totalIPs}</span>
+                <span className="text-green-600">{totalIPs - usedIPs} свободно</span>
               </div>
             </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+          </div>
+        </aside>
+      )}
 
-      <AnimatePresence>
-        {sidebarOpen && isMobile && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/20 z-20 md:hidden" />
-        )}
-      </AnimatePresence>
+      {sidebarOpen && isMobile && (
+        <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/20 z-20 md:hidden" />
+      )}
 
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 px-5 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
               {sidebarOpen ? <X className="text-gray-600" size={18} /> : <Menu className="text-gray-600" size={18} />}
-            </motion.button>
+            </button>
             <div>
               <h2 className="text-base font-semibold text-gray-900">{tabs.find((t) => t.key === activeTab)?.label}</h2>
               <p className="text-xs text-gray-500">{tabs.find((t) => t.key === activeTab)?.description}</p>
@@ -193,17 +178,14 @@ function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-5">
-          <AnimatePresence mode="wait">
-            <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              {activeTab === 'dashboard' && <Dashboard ipAssignments={ipAssignments} signatures={signatures} employees={employees} />}
-              {activeTab === 'ip-pool' && <IPPool ipAssignments={ipAssignments} employees={employees} onUpdate={handleUpdateIPs} />}
-              {activeTab === 'employees' && <Employees employees={employees} onUpdate={handleUpdateEmployees} />}
-              {activeTab === 'signatures' && <Signatures signatures={signatures} onUpdate={handleUpdateSignatures} />}
-              {activeTab === 'reports' && <Reports ipAssignments={ipAssignments} signatures={signatures} employees={employees} onUpdateIP={handleUpdateIPs} />}
-              {activeTab === 'settings' && <SettingsPanel networks={networks} onUpdate={handleUpdateNetworks} />}
-            </motion.div>
-          </AnimatePresence>
+          <div className="page-enter">
+            {activeTab === 'dashboard' && <Dashboard ipAssignments={ipAssignments} signatures={signatures} employees={employees} />}
+            {activeTab === 'ip-pool' && <IPPool ipAssignments={ipAssignments} employees={employees} onUpdate={handleUpdateIPs} />}
+            {activeTab === 'employees' && <EmployeesComponent employees={employees} onUpdate={handleUpdateEmployees} />}
+            {activeTab === 'signatures' && <Signatures signatures={signatures} onUpdate={handleUpdateSignatures} />}
+            {activeTab === 'reports' && <Reports ipAssignments={ipAssignments} signatures={signatures} employees={employees} onUpdateIP={handleUpdateIPs} />}
+            {activeTab === 'settings' && <SettingsPanel networks={networks} onUpdate={handleUpdateNetworks} />}
+          </div>
         </div>
       </main>
     </div>

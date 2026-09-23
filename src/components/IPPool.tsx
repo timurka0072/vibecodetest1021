@@ -1,20 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search,
-  Filter,
-  Edit3,
-  Trash2,
-  Plus,
-  X,
-  Save,
-  Laptop,
-  Monitor,
-  Printer,
-  Cpu,
-  HardDrive,
-  Users,
-} from 'lucide-react';
+import { Search, Filter, Edit3, Trash2, Plus, X, Save, Laptop, Monitor, Printer, Cpu, HardDrive, Users } from 'lucide-react';
 import { IPAssignment, Device, DeviceType, EmployeeAssignment, Employee } from '../types';
 import { generateId } from '../store';
 import EmployeeAutocomplete from './EmployeeAutocomplete';
@@ -153,13 +138,12 @@ export default function IPPool({ ipAssignments, employees, onUpdate }: Props) {
 
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+      <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-1">Пул IP-адресов</h2>
         <p className="text-sm text-gray-500">Управление и мониторинг сетевых адресов</p>
-      </motion.div>
+      </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -176,10 +160,8 @@ export default function IPPool({ ipAssignments, employees, onUpdate }: Props) {
             { key: 'free', label: 'Свободные', count: ipAssignments.filter((ip) => (ip.assignments?.length || 0) === 0 && (ip.devices?.length || 0) === 0).length },
             { key: 'used', label: 'Занятые', count: ipAssignments.filter((ip) => (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0).length },
           ].map((filter) => (
-            <motion.button
+            <button
               key={filter.key}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
               onClick={() => setFilterStatus(filter.key as any)}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                 filterStatus === filter.key
@@ -192,13 +174,12 @@ export default function IPPool({ ipAssignments, employees, onUpdate }: Props) {
               <span className={`px-1.5 py-0.5 rounded text-xs ${filterStatus === filter.key ? 'bg-white/20' : 'bg-gray-100'}`}>
                 {filter.count}
               </span>
-            </motion.button>
+            </button>
           ))}
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-        className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -212,16 +193,10 @@ export default function IPPool({ ipAssignments, employees, onUpdate }: Props) {
               </tr>
             </thead>
             <tbody>
-              {filteredIPs.slice(0, 50).map((ip, index) => {
+              {filteredIPs.slice(0, 50).map((ip) => {
                 const isUsed = (ip.assignments?.length || 0) > 0 || (ip.devices?.length || 0) > 0;
                 return (
-                  <motion.tr
-                    key={ip.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.02 }}
-                    className="border-b border-gray-100"
-                  >
+                  <tr key={ip.id} className="border-b border-gray-100">
                     <td className="py-3 px-4">
                       <span className="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">
                         {ip.ipAddress}
@@ -273,247 +248,217 @@ export default function IPPool({ ipAssignments, employees, onUpdate }: Props) {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1.5">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                        <button
                           onClick={() => handleEdit(ip)}
                           className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors"
                         >
                           <Edit3 size={14} />
-                        </motion.button>
+                        </button>
                         {isUsed && (
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                          <button
                             onClick={() => handleRelease(ip.id)}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                           >
                             <Trash2 size={14} />
-                          </motion.button>
+                          </button>
                         )}
                       </div>
                     </td>
-                  </motion.tr>
+                  </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-      </motion.div>
+      </div>
 
       {/* Edit Modal */}
-      <AnimatePresence>
-        {showModal && editingIP && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Редактирование</h3>
-                  <p className="text-sm text-gray-500 font-mono">{editingIP.ipAddress}</p>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowModal(false)}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
-                >
-                  <X size={20} className="text-gray-400" />
-                </motion.button>
+      {showModal && editingIP && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Редактирование</h3>
+                <p className="text-sm text-gray-500 font-mono">{editingIP.ipAddress}</p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Кабинет</label>
+                <input
+                  type="text"
+                  value={editingIP.room || ''}
+                  onChange={(e) => setEditingIP({ ...editingIP, room: e.target.value })}
+                  placeholder="Номер кабинета"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+                />
               </div>
 
-              <div className="p-6 space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Кабинет</label>
-                  <input
-                    type="text"
-                    value={editingIP.room || ''}
-                    onChange={(e) => setEditingIP({ ...editingIP, room: e.target.value })}
-                    placeholder="Номер кабинета"
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
-                  />
+              {/* Devices Section */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-medium text-gray-700">Устройства на этом IP</label>
+                  <button
+                    onClick={addDevice}
+                    className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1 font-medium"
+                  >
+                    <Plus size={12} />
+                    Добавить устройство
+                  </button>
                 </div>
 
-                {/* Devices Section */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="text-sm font-medium text-gray-700">Устройства на этом IP</label>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={addDevice}
-                      className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1 font-medium"
-                    >
-                      <Plus size={12} />
-                      Добавить устройство
-                    </motion.button>
+                {(editingIP.devices?.length || 0) === 0 && (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                    <Monitor size={32} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-400">Нет устройств</p>
                   </div>
+                )}
 
-                  {(editingIP.devices?.length || 0) === 0 && (
-                    <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                      <Monitor size={32} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-sm text-gray-400">Нет устройств</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {(editingIP.devices || []).map((device) => (
-                      <div key={device.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <label className="text-xs text-gray-600 font-medium mb-1 block">Тип</label>
-                            <select
-                              value={device.type}
-                              onChange={(e) => updateDevice(device.id, 'type', e.target.value)}
-                              className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
-                            >
-                              <option value="laptop">Ноутбук</option>
-                              <option value="desktop">ПК</option>
-                              <option value="printer">Принтер</option>
-                              <option value="mfp">МФУ</option>
-                              <option value="other">Другое</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-600 font-medium mb-1 block">Название</label>
-                            <input
-                              type="text"
-                              value={device.name}
-                              onChange={(e) => updateDevice(device.id, 'name', e.target.value)}
-                              placeholder="Модель"
-                              className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-xs text-gray-600 font-medium mb-1 block">Инв. номер</label>
-                            <input
-                              type="text"
-                              value={device.inventoryNumber || ''}
-                              onChange={(e) => updateDevice(device.id, 'inventoryNumber', e.target.value)}
-                              placeholder="ИНВ-00001"
-                              className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-600 font-medium mb-1 block">MAC-адрес</label>
-                            <input
-                              type="text"
-                              value={device.macAddress || ''}
-                              onChange={(e) => updateDevice(device.id, 'macAddress', e.target.value)}
-                              placeholder="AA:BB:CC:DD:EE:FF"
-                              className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
-                            />
-                          </div>
-                        </div>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => removeDevice(device.id)}
-                          className="mt-3 text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-medium"
-                        >
-                          <Trash2 size={12} />
-                          Удалить устройство
-                        </motion.button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Employees Section */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Users size={16} />
-                      Сотрудники
-                    </label>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={addAssignment}
-                      className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1 font-medium"
-                    >
-                      <Plus size={12} />
-                      Добавить сотрудника
-                    </motion.button>
-                  </div>
-
-                  {(editingIP.assignments?.length || 0) === 0 && (
-                    <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                      <Users size={32} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-sm text-gray-400">Нет назначений</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {(editingIP.assignments || []).map((assignment) => (
-                      <div key={assignment.id} className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <label className="text-xs text-gray-600 font-medium mb-1.5 block">Сотрудник</label>
-                            <EmployeeAutocomplete
-                              employees={employees}
-                              value={assignment.employeeId}
-                              onChange={(employeeId) => updateAssignment(assignment.id, 'employeeId', employeeId)}
-                            />
-                          </div>
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => removeAssignment(assignment.id)}
-                            className="ml-3 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                <div className="space-y-3">
+                  {(editingIP.devices || []).map((device) => (
+                    <div key={device.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="text-xs text-gray-600 font-medium mb-1 block">Тип</label>
+                          <select
+                            value={device.type}
+                            onChange={(e) => updateDevice(device.id, 'type', e.target.value)}
+                            className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
                           >
-                            <Trash2 size={14} />
-                          </motion.button>
+                            <option value="laptop">Ноутбук</option>
+                            <option value="desktop">ПК</option>
+                            <option value="printer">Принтер</option>
+                            <option value="mfp">МФУ</option>
+                            <option value="other">Другое</option>
+                          </select>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600 font-medium mb-1.5 block">Дата назначения</label>
+                          <label className="text-xs text-gray-600 font-medium mb-1 block">Название</label>
                           <input
-                            type="date"
-                            value={assignment.assignedDate}
-                            onChange={(e) => updateAssignment(assignment.id, 'assignedDate', e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+                            type="text"
+                            value={device.name}
+                            onChange={(e) => updateDevice(device.id, 'name', e.target.value)}
+                            placeholder="Модель"
+                            className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
                           />
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-gray-600 font-medium mb-1 block">Инв. номер</label>
+                          <input
+                            type="text"
+                            value={device.inventoryNumber || ''}
+                            onChange={(e) => updateDevice(device.id, 'inventoryNumber', e.target.value)}
+                            placeholder="ИНВ-00001"
+                            className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-600 font-medium mb-1 block">MAC-адрес</label>
+                          <input
+                            type="text"
+                            value={device.macAddress || ''}
+                            onChange={(e) => updateDevice(device.id, 'macAddress', e.target.value)}
+                            placeholder="AA:BB:CC:DD:EE:FF"
+                            className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeDevice(device.id)}
+                        className="mt-3 text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-medium"
+                      >
+                        <Trash2 size={12} />
+                        Удалить устройство
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSave}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
-                >
-                  <Save size={16} />
-                  Сохранить
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
-                >
-                  Отмена
-                </motion.button>
+              {/* Employees Section */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Users size={16} />
+                    Сотрудники
+                  </label>
+                  <button
+                    onClick={addAssignment}
+                    className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1 font-medium"
+                  >
+                    <Plus size={12} />
+                    Добавить сотрудника
+                  </button>
+                </div>
+
+                {(editingIP.assignments?.length || 0) === 0 && (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                    <Users size={32} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-400">Нет назначений</p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {(editingIP.assignments || []).map((assignment) => (
+                    <div key={assignment.id} className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <label className="text-xs text-gray-600 font-medium mb-1.5 block">Сотрудник</label>
+                          <EmployeeAutocomplete
+                            employees={employees}
+                            value={assignment.employeeId}
+                            onChange={(employeeId) => updateAssignment(assignment.id, 'employeeId', employeeId)}
+                          />
+                        </div>
+                        <button
+                          onClick={() => removeAssignment(assignment.id)}
+                          className="ml-3 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600 font-medium mb-1.5 block">Дата назначения</label>
+                        <input
+                          type="date"
+                          value={assignment.assignedDate}
+                          onChange={(e) => updateAssignment(assignment.id, 'assignedDate', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+              <button
+                onClick={handleSave}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+              >
+                <Save size={16} />
+                Сохранить
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
